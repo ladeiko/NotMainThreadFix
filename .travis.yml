@@ -1,0 +1,24 @@
+language: objective-c
+branches:
+  only:
+    - main
+jobs:
+  include:
+    - stage: Xcode Tests
+      osx_image: xcode12.2
+      env:
+        - DESTINATION="'platform=iOS Simulator,name=iPhone 6s,OS=10.3'"
+        - DESTINATION="'platform=iOS Simulator,name=iPhone 6s,OS=11.4'"
+        - DESTINATION="'platform=iOS Simulator,name=iPhone 6s,OS=12.2'"
+        - DESTINATION="'platform=iOS Simulator,name=iPhone 8,OS=13.5'"
+        - DESTINATION="'platform=iOS Simulator,name=iPhone 8,OS=14.2'"
+      before_install:
+        - gem install cocoapods xcpretty --no-document --quiet
+        - pod repo update
+        - pod install --project-directory=Demo
+      script:
+        # Breaking down this command:
+        # eval is used here, otherwise environment variables are not present.
+        # `set -o pipefail && ` is so that the return code isn't gobbled by xcpretty (per https://github.com/supermarin/xcpretty#usage)
+        # then it's standard xcodebuild | xcpretty.
+        - eval "set -o pipefail && xcodebuild -workspace Demo/NotMainThreadFixDemo.xcworkspace -scheme NotMainThreadFixDemo -sdk iphonesimulator -destination $DESTINATION OTHERCFLAGS='-Werror' test | xcpretty"
